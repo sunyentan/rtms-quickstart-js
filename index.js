@@ -32,8 +32,22 @@ rtms.onWebhookEvent(({ event, payload }) => {
   const client = new rtms.Client();
   clients.set(streamId, client);
 
-  client.onTranscriptData((data, size, timestamp, metadata) => {
-    console.log(`[${timestamp}] -- ${metadata.userName}: ${data}`);
+  // client.onTranscriptData((data, size, timestamp, metadata) => {
+  //   console.log(`[${timestamp}] -- ${metadata.userName}: ${data}`);
+  // });
+
+  const video_params = {
+    contentType: rtms.VideoContentType.RAW_VIDEO,
+    codec: rtms.VideoCodec.H264,
+    resolution: rtms.VideoResolution.SD,
+    dataOpt: rtms.VideoDataOption.VIDEO_SINGLE_ACTIVE_STREAM,
+    fps: 30
+  };
+
+  client.setVideoParams(video_params);
+
+  client.onVideoData((data, size, timestamp, metadata) => {
+    console.log(`Received ${size} bytes of video data at ${timestamp} from ${metadata.userName}`);
   });
 
   // Join the meeting using the webhook payload directly
