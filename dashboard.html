@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProctorAI | Sentinel Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            --accent-green: #00ff9d;
+            --accent-red: #ff4d4d;
+            --accent-blue: #00f2ff;
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: radial-gradient(circle at top left, #1a1a2e, #16213e, #0f3460);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Ambient Background Animation */
+        body::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at center, rgba(0, 242, 255, 0.1) 0%, transparent 40%);
+            animation: pulse 15s infinite linear;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            33% {
+                transform: translate(20px, -20px) scale(1.1);
+            }
+
+            66% {
+                transform: translate(-20px, 20px) scale(0.9);
+            }
+
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+        }
+
+        /* Layout */
+        header {
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: span;
+            align-items: center;
+            border-bottom: 1px solid var(--glass-border);
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 1.5rem;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--accent-blue);
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .logo-icon::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+        }
+
+        .status-badge {
+            background: var(--glass-bg);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            border: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent-green);
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        main {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+            padding: 20px;
+            height: calc(100vh - 70px);
+        }
+
+        /* Video Section */
+        .video-panel {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            backdrop-filter: blur(12px);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: var(--glass-shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .panel-title {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .video-frame {
+            flex: 1;
+            background: #000;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .video-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .overlay-alert {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: rgba(255, 77, 77, 0.9);
+            color: white;
+            border-radius: 8px;
+            font-weight: 700;
+            transform: translateX(200%);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 15px rgba(255, 77, 77, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .overlay-alert.active {
+            transform: translateX(0);
+        }
+
+        /* Controls / Sidebar */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+        }
+
+        .card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            backdrop-filter: blur(12px);
+            box-shadow: var(--glass-shadow);
+        }
+
+        .card h3 {
+            font-size: 1rem;
+            margin-bottom: 15px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 10px;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
+        .event-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .event-item {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: background 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .event-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .event-item.type-phone {
+            border-left-color: var(--accent-red);
+        }
+
+        .event-item.type-gaze {
+            border-left-color: #ffcc00;
+        }
+
+        .event-item.type-missing {
+            border-left-color: #ff00ff;
+        }
+
+        .event-time {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            min-width: 50px;
+        }
+
+        .event-details {
+            flex: 1;
+        }
+
+        .event-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .users-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .user-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-weight: 600;
+        }
+
+        .user-status {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .flag-btn {
+            background: transparent;
+            border: 1px solid var(--accent-red);
+            color: var(--accent-red);
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+        }
+
+        .flag-btn:hover {
+            background: var(--accent-red);
+            color: white;
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+
+        /* Clip viewing modal (hidden by default) */
+        #clip-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: #1a1a2e;
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid var(--glass-border);
+            width: 80%;
+            max-width: 800px;
+            text-align: center;
+        }
+
+        .close-btn {
+            float: right;
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="logo">
+            <div class="logo-icon"></div>
+            ZOOM PROCTOR<span style="font-weight: 300; opacity: 0.8;">AI</span>
+        </div>
+        <div class="status-badge">
+            <div class="status-dot"></div>
+            System Online
+        </div>
+    </header>
+
+    <main>
+        <div class="video-panel">
+            <div class="panel-header">
+                <span class="panel-title">Live Stream - Sun-Yen Tan</span>
+                <span
+                    style="font-size: 0.8rem; color: var(--accent-green); border: 1px solid var(--accent-green); padding: 2px 8px; border-radius: 4px;">LIVE</span>
+            </div>
+
+            <div class="video-frame">
+                <!-- Video Source from Backend -->
+                <img id="video-feed" src="/video_feed" alt="Waiting for stream..." />
+
+                <div id="alert-banner" class="overlay-alert">
+                    <span id="alert-icon">⚠️</span>
+                    <span id="alert-text">PHONE DETECTED</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <!-- Stats -->
+            <div class="card">
+                <h3>Detection Stats</h3>
+                <div class="stat-grid">
+                    <div class="stat-box">
+                        <div id="phone-count" class="stat-value" style="color: var(--accent-red)">0</div>
+                        <div class="stat-label">Phone Events</div>
+                    </div>
+                    <div class="stat-box">
+                        <div id="gaze-count" class="stat-value" style="color: #ffcc00">0</div>
+                        <div class="stat-label">Gaze Events</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Events -->
+            <div class="card" style="flex: 1;">
+                <h3>Flagged Events</h3>
+                <div id="event-list" class="event-list">
+                    <!-- Events will populate here -->
+                </div>
+            </div>
+
+            <!-- Cheater List -->
+            <div class="card">
+                <h3>Flagged Students</h3>
+                <div id="cheater-list" class="users-list">
+                    <div class="user-item">
+                        <div class="user-info">
+                            <span class="user-name">Student Sun-Yen Tan</span>
+                            <span class="user-status">Monitoring...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="clip-modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="document.getElementById('clip-modal').style.display='none'">&times;</span>
+            <h2>Event Replay</h2>
+            <div id="replay-container"
+                style="margin-top:20px; min-height: 200px; display:flex; justify-content:center; align-items:center;">
+                <!-- Replay Image/Video goes here -->
+                <p>Clip loading...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // WebSocket or SSE connection
+        // Since we are using SSE in python (likely), lets set up event source
+
+        let phoneCount = 0;
+        let gazeCount = 0;
+
+        // Track the last event ID we processed to avoid duplicates
+        let lastProcessedEventId = null;
+
+        const alertBanner = document.getElementById('alert-banner');
+        const alertText = document.getElementById('alert-text');
+        const eventList = document.getElementById('event-list');
+        const phoneCountEl = document.getElementById('phone-count');
+        const gazeCountEl = document.getElementById('gaze-count');
+
+        // Poll for status updates
+        setInterval(fetchStatus, 500);
+
+        async function fetchStatus() {
+            try {
+                const response = await fetch('/status');
+                const data = await response.json();
+
+                // data.latest_event = { id: "...", type: "...", timestamp: ..., is_active: bool }
+                const event = data.latest_event;
+
+                // 1. Handle Active Alert Banner
+                if (event.is_active && event.type) {
+                    if (!alertBanner.classList.contains('active')) {
+                        alertBanner.classList.add('active');
+                    }
+                    alertText.textContent = event.type;
+                } else {
+                    alertBanner.classList.remove('active');
+                }
+
+                // 2. Handle New Event Logging
+                if (event.id && event.id !== lastProcessedEventId) {
+                    processNewEvent(event);
+                    lastProcessedEventId = event.id;
+                }
+
+            } catch (e) {
+                console.error("Connection lost", e);
+            }
+        }
+
+        function processNewEvent(event) {
+            const type = event.type;
+            const eventId = event.id;
+
+            // Update stats
+            let eventClass = '';
+            if (type.includes("PHONE")) {
+                phoneCount++;
+                phoneCountEl.textContent = phoneCount;
+                eventClass = 'type-phone';
+            } else if (type.includes("GAZE")) {
+                gazeCount++;
+                gazeCountEl.textContent = gazeCount;
+                eventClass = 'type-gaze';
+            } else if (type.includes("NOT PRESENT")) {
+                eventClass = 'type-missing';
+            }
+
+            // Add to list
+            addEventToList(type, eventId, eventClass);
+        }
+
+        function addEventToList(type, eventId, cssClass) {
+            const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: "numeric", minute: "numeric", second: "numeric" });
+            const item = document.createElement('div');
+            item.className = `event-item ${cssClass}`;
+
+            // Create clickable replay link
+            item.innerHTML = `
+                <span class="event-time">${time}</span>
+                <div class="event-details">
+                    <div class="event-title">${titleCase(type)}</div>
+                </div>
+                <button onclick="playClip('${eventId}', '${time}')" class="flag-btn">REPLAY</button>
+            `;
+
+            eventList.prepend(item);
+
+            // Limit list size
+            if (eventList.children.length > 20) {
+                eventList.lastElementChild.remove();
+            }
+        }
+
+        function titleCase(str) {
+            if (!str) return "";
+            return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        }
+
+        window.playClip = function (eventId, time) {
+            const modal = document.getElementById('clip-modal');
+            const container = document.getElementById('replay-container');
+            modal.style.display = 'flex';
+
+            // Use the event ID to fetch the specific snapshot
+            container.innerHTML = `
+                <div style="text-align: center;">
+                    <img src="/snapshot?id=${eventId}" style="max-width:100%; max-height: 60vh; border-radius:8px; border: 1px solid rgba(255,255,255,0.2);" />
+                    <p style="color:#aaa; margin-top:10px">Event Snapshot at ${time}</p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+
+</html>
